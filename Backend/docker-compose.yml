@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  api:
+    image: vanmanager-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+      - "8443:443"
+    depends_on:
+      - postgres
+      - seq
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=vanmanager;Username=postgres;Password=postgres
+      - JwtSettings__Secret=${JWT_SECRET}
+      - JwtSettings__Issuer=VanManager
+      - JwtSettings__Audience=VanManagerClients
+      - JwtSettings__ExpiryMinutes=60
+      - EmailSettings__SmtpServer=${SMTP_SERVER}
+      - EmailSettings__SmtpPort=${SMTP_PORT}
+      - EmailSettings__SmtpUsername=${SMTP_USERNAME}
+      - EmailSettings__SmtpPassword=${SMTP_PASSWORD}
+      - EmailSettings__SenderEmail=noreply@vanmanager.com
+      - EmailSettings__SenderName=VanManager
+      - AppUrl=${APP_URL}
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=vanmanager
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  seq:
+    image: datalust/seq:latest
+    ports:
+      - "5341:80"
+    environment:
+      - ACCEPT_EULA=Y
+    volumes:
+      - seq-data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  seq-data:
