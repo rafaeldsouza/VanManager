@@ -301,6 +301,35 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, IdentityRole<Guid
         {
             entity.HasKey(e => e.Id);
 
+            entity.Property(e => e.BoardingLatitude)
+                .IsRequired()
+                .HasPrecision(10, 6);
+
+            entity.Property(e => e.BoardingLongitude)
+                .IsRequired()
+                .HasPrecision(10, 6);
+
+            entity.Property(e => e.BoardingAddress)
+                .HasMaxLength(200);
+
+            entity.Property(e => e.DropoffLatitude)
+                .IsRequired()
+                .HasPrecision(10, 6);
+
+            entity.Property(e => e.DropoffLongitude)
+                .IsRequired()
+                .HasPrecision(10, 6);
+
+            entity.Property(e => e.DropoffAddress)
+                .HasMaxLength(200);
+
+            entity.Property(e => e.Notes)
+                .HasMaxLength(500);
+
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(20);
+
             entity.HasOne(e => e.Student)
                 .WithMany(e => e.TripLogs)
                 .HasForeignKey(e => e.StudentId)
@@ -310,6 +339,11 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, IdentityRole<Guid
                 .WithMany(e => e.TripLogs)
                 .HasForeignKey(e => e.RouteId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Van)
+                .WithMany()
+                .HasForeignKey(e => e.VanId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 

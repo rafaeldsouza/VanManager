@@ -13,6 +13,12 @@ public class Repository<T> : IRepository<T> where T : class
         _dbContext = dbContext;
     }
 
+
+    public IQueryable<T> GetQueryable()
+    {
+        return _dbContext.Set<T>().AsQueryable();
+    }
+
     public async Task<T?> GetByIdAsync(Guid id)
     {
         return await _dbContext.Set<T>().FindAsync(id);

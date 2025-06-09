@@ -1,10 +1,11 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using VanManager.Domain.Entities;
 using VanManager.Domain.Repositories;
 
 namespace VanManager.Application.AuthorizedGuardians.Queries.GetAuthorizedGuardians;
 
-public record GetAuthorizedGuardiansQuery : IRequest<IEnumerable<AuthorizedGuardian>>;
+public record GetAuthorizedGuardiansQuery(Guid StudentId) : IRequest<IEnumerable<AuthorizedGuardian>>;
 
 public class GetAuthorizedGuardiansQueryHandler : IRequestHandler<GetAuthorizedGuardiansQuery, IEnumerable<AuthorizedGuardian>>
 {
@@ -17,6 +18,6 @@ public class GetAuthorizedGuardiansQueryHandler : IRequestHandler<GetAuthorizedG
 
     public async Task<IEnumerable<AuthorizedGuardian>> Handle(GetAuthorizedGuardiansQuery request, CancellationToken cancellationToken)
     {
-        return await _unitOfWork.Repository<AuthorizedGuardian>().GetAllAsync();
+        return await _unitOfWork.Repository<AuthorizedGuardian>().GetQueryable().Where(x => x.StudentId == request.StudentId).ToListAsync(cancellationToken);
     }
 }
