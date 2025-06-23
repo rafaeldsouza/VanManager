@@ -49,7 +49,7 @@ public class TokenService : ITokenService
         {
             Token = refreshToken,
             UserId = user.Id,
-            Expires = _dateTimeProvider.UtcNow.AddDays(7)
+            ExpiresAt = _dateTimeProvider.UtcNow.AddDays(7)
         };
 
         await _context.RefreshTokens.AddAsync(refreshTokenEntity);
@@ -82,7 +82,7 @@ public class TokenService : ITokenService
         {
             Token = newRefreshToken,
             UserId = user.Id,
-            Expires = _dateTimeProvider.UtcNow.AddDays(7)
+            ExpiresAt = _dateTimeProvider.UtcNow.AddDays(7)
         };
 
         await _context.RefreshTokens.AddAsync(refreshTokenEntity);

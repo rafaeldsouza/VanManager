@@ -21,15 +21,22 @@ public class StudentTripLog
     public DateTime DropoffTime { get; set; }
     public string? Notes { get; set; }
     public TripStatus Status { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+    public Guid? CreatedByUserId { get; set; }
+    public Guid? UpdatedByUserId { get; set; }
     
     // Navigation properties
     public Student Student { get; set; } = null!;
     public Route Route { get; set; } = null!;
     public Van Van { get; set; } = null!;
+    public AppUser? CreatedBy { get; set; }
+    public AppUser? UpdatedBy { get; set; }
 }
 
 public enum TripStatus
 {
+    Pending,
     Scheduled,
     InProgress,
     Completed,

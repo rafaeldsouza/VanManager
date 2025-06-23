@@ -1,17 +1,20 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VanManager.Application.Common.Interfaces;
+using VanManager.Application.StudentAbsences.Commands.ApproveAbsenceJustification;
 using VanManager.Application.StudentAbsences.Commands.CreateStudentAbsence;
 using VanManager.Application.StudentAbsences.Commands.DeleteStudentAbsence;
 using VanManager.Application.StudentAbsences.Commands.UpdateStudentAbsence;
 using VanManager.Application.StudentAbsences.Queries.GetStudentAbsenceById;
 using VanManager.Application.StudentAbsences.Queries.GetStudentAbsences;
-using VanManager.Domain.Constants;
+
 using VanManager.Domain.Entities;
 
 namespace VanManager.API.Controllers;
 
-[Authorize(Roles = $"{Roles.Driver}, {Roles.FleetOwner}")]
+[Authorize]
+[ApiController]
+[Route("api/[controller]")]
 public class StudentAbsencesController : ApiControllerBase
 {
     private readonly ICurrentUserService _currentUserService;
@@ -82,10 +85,9 @@ public class StudentAbsencesController : ApiControllerBase
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<StudentAbsence>> CreateStudentAbsence([FromBody] CreateStudentAbsenceCommand command)
+    public async Task<ActionResult<Guid>> Create(CreateStudentAbsenceCommand command)
     {
-        var absence = await Mediator.Send(command);
-        return CreatedAtAction(nameof(GetStudentAbsence), new { id = absence.Id }, absence);
+        return await Mediator.Send(command);
     }
 
     /// <summary>
@@ -111,11 +113,11 @@ public class StudentAbsencesController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateStudentAbsence(Guid id, [FromBody] UpdateStudentAbsenceCommand command)
+    public async Task<IActionResult> Update(Guid id, UpdateStudentAbsenceCommand command)
     {
         if (id != command.Id)
         {
-            return BadRequest(new { message = "ID da ausência não corresponde" });
+            return BadRequest();
         }
 
         await Mediator.Send(command);
@@ -131,9 +133,32 @@ public class StudentAbsencesController : ApiControllerBase
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteStudentAbsence(Guid id)
+    [Authorize(Roles = "Admin,FleetOwner")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         await Mediator.Send(new DeleteStudentAbsenceCommand(id));
         return NoContent();
+    }
+
+    /// <summary>
+    /// Aprova uma justificativa de ausência
+    /// </summary>
+    [HttpPut("{id}/approve-justification")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [Authorize(Roles = "Admin,FleetOwner")]
+    public async Task<IActionResult> ApproveJustification(Guid id)
+    {
+        await Mediator.Send(new ApproveAbsenceJustificationCommand(id));
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Gets all absence records for a student
+    /// </summary>
+    [HttpGet("student/{studentId}")]
+    public async Task<ActionResult<IList<StudentAbsence>>> GetByStudentId(Guid studentId)
+    {
+        var result =  await Mediator.Send(new GetStudentAbsenceByIdQuery(studentId));
+        return Ok(result);
     }
 }

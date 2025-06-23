@@ -45,8 +45,6 @@ public class UpdatePlanCommandHandler : IRequestHandler<UpdatePlanCommand>
         plan.Name = request.Name;
         plan.Price = request.Price;
         plan.MaxVans = request.MaxVans;
-        plan.Active = request.Active;
-        plan.Visible = request.Visible;
 
         await _unitOfWork.Repository<Plan>().UpdateAsync(plan);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

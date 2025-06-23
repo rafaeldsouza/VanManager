@@ -32,6 +32,12 @@ public class AuthController : ApiControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
+        // check if the email is already registered
+        var existingUser = await _identityService.UserExistsAsync(request.Email);
+        if (existingUser)
+        {
+            return BadRequest(new { message = "E-mail já cadastrado." });
+        }
 
         var (result, userId) = await _identityService.CreateUserAsync(request.Email, request.Password);
 
@@ -43,8 +49,8 @@ public class AuthController : ApiControllerBase
         // Update user with additional information
         var updateResult = await _identityService.UpdateUserAsync(
             userId,
-            null,  // userName - we keep the email as the userName
-            null,  // email - already set during creation
+            request.Email,  // userName - we keep the email as the userName
+            request.Email,  // email - already set during creation
             request.FullName,
             request.PhoneNumber
         );

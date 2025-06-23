@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using VanManager.Application.Common.Interfaces;
+using VanManager.Domain.Entities;
 
 namespace VanManager.API.Services;
 
@@ -35,5 +36,19 @@ public class CurrentUserService : ICurrentUserService
             return _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;
             //FindAll(ClaimTypes.Role)
         }
+    }
+
+    public string? Email => throw new NotImplementedException();
+
+    public AppUser AppUser => throw new NotImplementedException();
+
+    public IEnumerable<string> GetRoles()
+    {
+        return _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role).Select(x=>x.Value).ToList() ?? new List<string>();
+    }
+
+    public bool IsInRole(string role)
+    {
+        return _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role).Any(x => x.Value.Equals(role, StringComparison.OrdinalIgnoreCase)) ?? false;
     }
 }

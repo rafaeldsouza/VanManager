@@ -39,9 +39,7 @@ public class CreatePlanCommandHandler : IRequestHandler<CreatePlanCommand, Plan>
             Id = Guid.NewGuid(),
             Name = request.Name,
             Price = request.Price,
-            MaxVans = request.MaxVans,
-            Active = request.Active,
-            Visible = request.Visible
+            MaxVans = request.MaxVans
         };
 
         await _unitOfWork.Repository<Plan>().AddAsync(plan);

@@ -40,7 +40,8 @@ public class IdentityService : IIdentityService
         {
             UserName = userName,
             Email = userName,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            FullName = " ",
         };
 
         var result = await _userManager.CreateAsync(user, password);
@@ -117,19 +118,25 @@ public class IdentityService : IIdentityService
     }
 
     public async Task<Guid?> ValidateUserAsync(string email, string password)
-{
-    var user = await _userManager.FindByEmailAsync(email);
-    if (user == null)
-        return Guid.Empty;
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+            return Guid.Empty;
 
-    var isValid = await _userManager.CheckPasswordAsync(user, password);
-    if (!isValid)
-        return Guid.Empty;
+        var isValid = await _userManager.CheckPasswordAsync(user, password);
+        if (!isValid)
+            return Guid.Empty;
 
-    return user.Id;
-}
+        return user.Id;
+    }
 
-    
+    //crete method to validate if user exists by email
+    public async Task<bool> UserExistsAsync(string email)
+    {
+        return await _userManager.Users.AnyAsync(u => u.Email == email);
+    }
+
+
 }
 
 public static class IdentityResultExtensions

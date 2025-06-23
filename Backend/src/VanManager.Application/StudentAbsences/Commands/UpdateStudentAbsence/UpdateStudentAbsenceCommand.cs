@@ -2,55 +2,59 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using VanManager.Application.Common.Exceptions;
 using VanManager.Application.Common.Interfaces;
+using VanManager.Domain.BusinessRules;
 using VanManager.Domain.Entities;
 using VanManager.Domain.Repositories;
 
 namespace VanManager.Application.StudentAbsences.Commands.UpdateStudentAbsence;
 
-public record UpdateStudentAbsenceCommand : IRequest
-{
-    public Guid Id { get; init; }
-    public Guid StudentId { get; init; }
-    public Guid RouteId { get; init; }
-    public DateTime Date { get; init; }
-    public string Type { get; init; } = string.Empty;
-    public string Reason { get; init; } = string.Empty;
-}
+public record UpdateStudentAbsenceCommand(
+    Guid Id,
+    string? Reason,
+    string? Justification,
+    bool IsJustified,
+    bool IsApproved) : IRequest;
 
 public class UpdateStudentAbsenceCommandHandler : IRequestHandler<UpdateStudentAbsenceCommand>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IRepository<StudentAbsence> _absenceRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdateStudentAbsenceCommandHandler> _logger;
 
     public UpdateStudentAbsenceCommandHandler(
-        IUnitOfWork unitOfWork,
+        IRepository<StudentAbsence> absenceRepository,
         ICurrentUserService currentUserService,
         ILogger<UpdateStudentAbsenceCommandHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _absenceRepository = absenceRepository;
         _currentUserService = currentUserService;
         _logger = logger;
     }
 
     public async Task Handle(UpdateStudentAbsenceCommand request, CancellationToken cancellationToken)
     {
-        var studentAbsence = await _unitOfWork.Repository<StudentAbsence>().GetByIdAsync(request.Id);
-
-        if (studentAbsence == null)
+        var absence = await _absenceRepository.GetByIdAsync(request.Id);
+        if (absence == null)
         {
-            throw new NotFoundException("Ausência do estudante não encontrada");
+            throw new NotFoundException($"Absence record with ID {request.Id} not found");
         }
 
-        studentAbsence.StudentId = request.StudentId;
-        studentAbsence.RouteId = request.RouteId;
-        studentAbsence.Date = request.Date;
-        studentAbsence.Type = request.Type;
-        studentAbsence.Reason = request.Reason;
+        if (!StudentAbsenceRules.CanUpdateAbsence(_currentUserService.GetRoles(), _currentUserService.AppUser, absence))
+        {
+            throw new UnauthorizedAccessException("Você não tem permissão para atualizar esta falta.");
+        }
 
-        await _unitOfWork.Repository<StudentAbsence>().UpdateAsync(studentAbsence);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        absence.Reason = request.Reason ?? string.Empty;
+        absence.Justification = request.Justification;
+        absence.IsJustified = request.IsJustified;
+        absence.UpdatedAt = DateTime.UtcNow;
+        absence.UpdatedByUserId = _currentUserService.UserId;
 
-        _logger.LogInformation("Ausência do estudante {StudentAbsenceId} atualizada por {UserId}", request.Id, _currentUserService.UserId);
+        await _absenceRepository.UpdateAsync(absence);
+
+        _logger.LogInformation(
+            "Updated absence record {AbsenceId} by user {UserId}",
+            absence.Id,
+            _currentUserService.UserId);
     }
 }

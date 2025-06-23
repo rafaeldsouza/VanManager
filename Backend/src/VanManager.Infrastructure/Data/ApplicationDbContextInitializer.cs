@@ -11,13 +11,13 @@ public class ApplicationDbContextInitializer
     private readonly ILogger<ApplicationDbContextInitializer> _logger;
     private readonly ApplicationDbContext _context;
     private readonly UserManager<AppUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly RoleManager<IdentityRole<Guid>> _roleManager;
 
     public ApplicationDbContextInitializer(
         ILogger<ApplicationDbContextInitializer> logger,
         ApplicationDbContext context,
         UserManager<AppUser> userManager,
-        RoleManager<IdentityRole> roleManager)
+        RoleManager<IdentityRole<Guid>> roleManager)
     {
         _logger = logger;
         _context = context;
@@ -63,7 +63,7 @@ public class ApplicationDbContextInitializer
         {
             if (!await _roleManager.RoleExistsAsync(role))
             {
-                await _roleManager.CreateAsync(new IdentityRole(role));
+                await _roleManager.CreateAsync(new IdentityRole<Guid> { Id = Guid.NewGuid(), Name = role, NormalizedName = role.ToUpper() });
                 _logger.LogInformation("Created role {Role}", role);
             }
         }
@@ -112,25 +112,19 @@ public class ApplicationDbContextInitializer
                     Id = Guid.NewGuid(), 
                     Name = "Básico", 
                     Price = 99.90m, 
-                    MaxVans = 1, 
-                    Active = true, 
-                    Visible = true 
+                    MaxVans = 1
                 },
                 new() { 
                     Id = Guid.NewGuid(), 
                     Name = "Profissional", 
                     Price = 299.90m, 
-                    MaxVans = 5, 
-                    Active = true, 
-                    Visible = true 
+                    MaxVans = 5
                 },
                 new() { 
                     Id = Guid.NewGuid(), 
                     Name = "Empresarial", 
                     Price = 999.90m, 
-                    MaxVans = 20, 
-                    Active = true, 
-                    Visible = true 
+                    MaxVans = 20
                 }
             };
             

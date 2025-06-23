@@ -11,4 +11,5 @@ public class Notification
     
     // Navigation properties
     public AppUser User { get; set; } = null!;
+    public string Title { get; set; }
 }

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using VanManager.Application.Common.Exceptions;
 using VanManager.Application.Common.Interfaces;
+using VanManager.Domain.BusinessRules;
 using VanManager.Domain.Entities;
 using VanManager.Domain.Repositories;
 
@@ -11,32 +12,39 @@ public record DeleteStudentAbsenceCommand(Guid Id) : IRequest;
 
 public class DeleteStudentAbsenceCommandHandler : IRequestHandler<DeleteStudentAbsenceCommand>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IRepository<StudentAbsence> _absenceRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<DeleteStudentAbsenceCommandHandler> _logger;
 
     public DeleteStudentAbsenceCommandHandler(
-        IUnitOfWork unitOfWork,
+        IRepository<StudentAbsence> absenceRepository,
         ICurrentUserService currentUserService,
         ILogger<DeleteStudentAbsenceCommandHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _absenceRepository = absenceRepository;
         _currentUserService = currentUserService;
         _logger = logger;
     }
 
     public async Task Handle(DeleteStudentAbsenceCommand request, CancellationToken cancellationToken)
     {
-        var studentAbsence = await _unitOfWork.Repository<StudentAbsence>().GetByIdAsync(request.Id);
-
-        if (studentAbsence == null)
+        var absence = await _absenceRepository.GetByIdAsync(request.Id);
+        if (absence == null)
         {
-            throw new NotFoundException("Ausência do estudante não encontrada");
+            throw new NotFoundException($"Absence record with ID {request.Id} not found");
         }
 
-        await _unitOfWork.Repository<StudentAbsence>().DeleteAsync(studentAbsence);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (!StudentAbsenceRules.CanDeleteAbsence(_currentUserService.GetRoles(), _currentUserService.AppUser,absence))
+        {
+            throw new UnauthorizedAccessException("Você não tem permissão para excluir esta falta.");
+        }
 
-        _logger.LogInformation("Ausência do estudante {StudentAbsenceId} excluída por {UserId}", request.Id, _currentUserService.UserId);
+        await _absenceRepository.DeleteAsync(absence);
+        
+
+        _logger.LogInformation(
+            "Deleted absence record {AbsenceId} by user {UserId}",
+            absence.Id,
+            _currentUserService.UserId);
     }
 }

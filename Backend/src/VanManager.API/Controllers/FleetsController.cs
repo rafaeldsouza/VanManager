@@ -44,26 +44,26 @@ public class FleetsController : ApiControllerBase
     public async Task<ActionResult<IEnumerable<Fleet>>> GetFleets()
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         if (userId == null)
         {
             _logger.LogWarning("Usuário não autenticado tentou acessar frotas");
             return Unauthorized(); // Usuário não autenticado
         }
-        if (userRole == "Parent" || userRole == "Student")
+        if (userRole.Contains("Parent") || userRole.Contains("Student"))
         {
             // Usuários do tipo Parent ou Student não podem ver frotas
             _logger.LogWarning("Usuário {UserId} com papel {UserRole} tentou acessar frotas", userId, userRole);
             return Forbid(); // Não pode ver nada
         }
 
-        if (userRole == "Driver")
+        if (userRole.Contains("Driver"))
         {
             var fleets = await Mediator.Send(new GetFleetByDriverIdQuery(userId.Value));
             return Ok(fleets);
         }
 
-        if (userRole == "FleetOwner")
+        if (userRole.Contains("FleetOwner"))
         {
             var fleets = await Mediator.Send(new GetFleetsByOwnerIdQuery(userId.Value));
             return Ok(fleets);
@@ -90,14 +90,14 @@ public class FleetsController : ApiControllerBase
     public async Task<ActionResult<Fleet>> GetFleet(Guid id)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         if (userId == null)
         {
             _logger.LogWarning("Usuário não autenticado tentou acessar frotas");
             return Unauthorized();
         }
 
-        if (userRole != "Admin" && userRole != "FleetOwner" && userRole != "Driver")
+        if (!userRole.Contains("Admin") && !userRole.Contains("FleetOwner") && !userRole.Contains("Driver"))
         {
             _logger.LogWarning("Usuário {UserId} com papel {UserRole} tentou acessar frota {FleetId}", userId, userRole, id);
             return Forbid();
@@ -111,13 +111,13 @@ public class FleetsController : ApiControllerBase
         }
 
         // Verifica se o usuário tem permissão para ver a frota
-        if (userRole == "FleetOwner" && fleet.OwnerUserId != userId)
+        if (userRole.Contains("FleetOwner") && fleet.OwnerUserId != userId)
         {
             _logger.LogWarning("FleetOwner {UserId} tentou acessar frota {FleetId} que não é sua", userId, id);
             return Forbid();
         }
 
-        if (userRole == "Driver")
+        if (userRole.Contains("Driver"))
         {
             var driverFleet = await Mediator.Send(new GetFleetByDriverIdQuery(userId.Value));
             if (!driverFleet.Any(f => f.Id == id))
@@ -151,7 +151,7 @@ public class FleetsController : ApiControllerBase
     public async Task<ActionResult<Fleet>> CreateFleet([FromBody] CreateFleetCommand command)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         
         if (userId == null)
         {
@@ -159,7 +159,7 @@ public class FleetsController : ApiControllerBase
             return Unauthorized();
         }
 
-        if (userRole != "FleetOwner")
+        if (!userRole.Contains("FleetOwner"))
         {
             _logger.LogWarning("Usuário {UserId} com papel {UserRole} tentou criar frota", userId, userRole);
             return Forbid();
@@ -200,7 +200,7 @@ public class FleetsController : ApiControllerBase
     public async Task<IActionResult> UpdateFleet(Guid id, [FromBody] UpdateFleetCommand command)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         
         if (userId == null)
         {
@@ -208,7 +208,7 @@ public class FleetsController : ApiControllerBase
             return Unauthorized();
         }
 
-        if (userRole != "FleetOwner")
+        if (!userRole.Contains("FleetOwner"))
         {
             _logger.LogWarning("Usuário {UserId} com papel {UserRole} tentou atualizar frota {FleetId}", userId, userRole, id);
             return Forbid();
@@ -256,7 +256,7 @@ public class FleetsController : ApiControllerBase
     public async Task<IActionResult> DeleteFleet(Guid id)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         
         if (userId == null)
         {
@@ -264,7 +264,7 @@ public class FleetsController : ApiControllerBase
             return Unauthorized();
         }
 
-        if (userRole != "FleetOwner")
+        if (!userRole.Contains("FleetOwner"))
         {
             _logger.LogWarning("Usuário {UserId} com papel {UserRole} tentou excluir frota {FleetId}", userId, userRole, id);
             return Forbid();

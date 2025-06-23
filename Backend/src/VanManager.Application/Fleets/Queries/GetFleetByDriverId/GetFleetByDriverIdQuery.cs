@@ -23,7 +23,7 @@ public class GetFleetByDriverIdQueryHandler : IRequestHandler<GetFleetByDriverId
          return await _context.Fleets
         .Include(f => f.Vans)
         .Where(
-            f => f.Vans.Any(v => v.AssignedDriverId == request.DriverUserId)            
+            f => f.Vans.Any(v => v.DriverId == request.DriverUserId)            
         ).ToListAsync(cancellationToken);
     }
 }

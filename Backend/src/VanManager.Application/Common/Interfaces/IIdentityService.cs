@@ -23,4 +23,11 @@ public interface IIdentityService
     /// <param name="password">Senha do usuário</param>
     /// <returns>Guid do usuário se válido, Guid.Empty se inválido</returns>
     Task<Guid?> ValidateUserAsync(string email, string password);
+
+    /// <summary>
+    /// Verifica se um usuário existe com base no e-mail fornecido.
+    /// </summary>
+    /// <param name="email"></param>
+    /// <returns></returns>
+    Task<bool> UserExistsAsync(string email);
 }

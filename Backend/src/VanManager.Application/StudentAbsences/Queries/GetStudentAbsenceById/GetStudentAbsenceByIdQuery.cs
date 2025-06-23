@@ -7,9 +7,9 @@ using VanManager.Domain.Repositories;
 
 namespace VanManager.Application.StudentAbsences.Queries.GetStudentAbsenceById;
 
-public record GetStudentAbsenceByIdQuery(Guid Id) : IRequest<StudentAbsence>;
+public record GetStudentAbsenceByIdQuery(Guid Id) : IRequest<IList<StudentAbsence>>;
 
-public class GetStudentAbsenceByIdQueryHandler : IRequestHandler<GetStudentAbsenceByIdQuery, StudentAbsence>
+public class GetStudentAbsenceByIdQueryHandler : IRequestHandler<GetStudentAbsenceByIdQuery, IList<StudentAbsence>>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -18,9 +18,9 @@ public class GetStudentAbsenceByIdQueryHandler : IRequestHandler<GetStudentAbsen
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<StudentAbsence> Handle(GetStudentAbsenceByIdQuery request, CancellationToken cancellationToken)
+    public async Task<IList<StudentAbsence>> Handle(GetStudentAbsenceByIdQuery request, CancellationToken cancellationToken)
     {
-        var studentAbsence = await _unitOfWork.Repository<StudentAbsence>().GetByIdAsync(request.Id);
+        var studentAbsence = _unitOfWork.Repository<StudentAbsence>().GetQueryable().Where(x=>x.StudentId == request.Id).ToList();
 
         if (studentAbsence == null)
         {

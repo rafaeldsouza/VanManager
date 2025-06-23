@@ -33,7 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services
-            .AddIdentity<AppUser, IdentityRole>(options =>
+            .AddIdentity<AppUser, IdentityRole<Guid>>(options =>
             {
                 options.Password.RequiredLength = 8;
                 options.Password.RequireDigit = true;

@@ -38,7 +38,7 @@ public class CreateVanCommandHandler : IRequestHandler<CreateVanCommand, Van>
             Id = Guid.NewGuid(),
             PlateNumber = request.PlateNumber,
             FleetId = request.FleetId,
-            AssignedDriverId = request.AssignedDriverId,
+            DriverId = request.AssignedDriverId,
             Capacity = request.Capacity
         };
 

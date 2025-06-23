@@ -11,7 +11,7 @@ using VanManager.Domain.Entities;
 
 namespace VanManager.API.Controllers;
 
-[Authorize(Roles = $"{Roles.Driver}, {Roles.FleetOwner}")]
+[Authorize(Roles = $"{Roles.Driver}, {Roles.FleetOwner}, {Roles.Admin}")]
 public class AuthorizedGuardiansController : ApiControllerBase
 {
     private readonly ICurrentUserService _currentUserService;

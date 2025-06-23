@@ -34,7 +34,7 @@ public class DeleteVanCommandHandler : IRequestHandler<DeleteVanCommand>
             _logger.LogWarning("Tentativa de exclusão de van {VanId} por {UserId} falhou: van não encontrada", request.Id, _currentUserService.UserId);
             throw new NotFoundException("Van não encontrada");
         }
-        if (van.Fleet.OwnerUserId == _currentUserService?.UserId || van.AssignedDriverId == _currentUserService?.UserId)
+        if (van.Fleet.OwnerUserId == _currentUserService?.UserId || van.DriverId == _currentUserService?.UserId)
         {
             _logger.LogWarning("Usuário {UserId} não tem permissão para excluir a van {VanId}", _currentUserService.UserId, request.Id);
             throw new UnauthorizedAccessException("Você não tem permissão para excluir esta van.");

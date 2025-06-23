@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using VanManager.Application.Common.Interfaces;
 using VanManager.Application.StudentTripLogs.Commands.CreateStudentTripLog;
 using VanManager.Application.StudentTripLogs.Commands.DeleteStudentTripLog;
@@ -33,13 +34,12 @@ public class StudentTripLogsController : ApiControllerBase
     /// <response code="200">Registro de viagem encontrado com sucesso</response>
     /// <response code="404">Registro de viagem não encontrado</response>
     [HttpGet("{id}")]
-    [Authorize(Policy = Permissions.ViewStudentTripLogs)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<StudentTripLog>> GetStudentTripLog(Guid id)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         
         if (userId == null)
         {
@@ -55,14 +55,14 @@ public class StudentTripLogsController : ApiControllerBase
         }
 
         // Verifica se o usuário tem permissão para ver o registro
-        if (userRole == "Parent" && studentTripLog.Student.ParentId != userId)
+        if (userRole.Contains("Parent") && studentTripLog.Student.ParentId != userId)
         {
             _logger.LogWarning("Parent {UserId} tentou acessar registro de viagem {TripLogId} que não é do seu estudante", 
                 userId, id);
             return Forbid();
         }
 
-        if (userRole == "Driver")
+        if (userRole.Contains("Driver"))
         {
             var vanTripLogs = await Mediator.Send(new GetStudentTripLogsByVanIdQuery(studentTripLog.VanId));
             if (!vanTripLogs.Any(x => x.Id == id))
@@ -82,12 +82,11 @@ public class StudentTripLogsController : ApiControllerBase
     /// <param name="studentId">ID do estudante</param>
     /// <response code="200">Lista de registros de viagem retornada com sucesso</response>
     [HttpGet("student/{studentId}")]
-    [Authorize(Policy = Permissions.ViewStudentTripLogs)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<StudentTripLog>>> GetStudentTripLogsByStudentId(Guid studentId)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         
         if (userId == null)
         {
@@ -96,7 +95,7 @@ public class StudentTripLogsController : ApiControllerBase
         }
 
         // Verifica se o usuário tem permissão para ver os registros
-        if (userRole == "Parent")
+        if (userRole.Contains("Parent"))
         {
             var studentTripLogs = await Mediator.Send(new GetStudentTripLogsByStudentIdQuery(studentId));
             var firstLog = studentTripLogs.FirstOrDefault();
@@ -118,12 +117,11 @@ public class StudentTripLogsController : ApiControllerBase
     /// <param name="vanId">ID da van</param>
     /// <response code="200">Lista de registros de viagem retornada com sucesso</response>
     [HttpGet("van/{vanId}")]
-    [Authorize(Policy = Permissions.ViewStudentTripLogs)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<StudentTripLog>>> GetStudentTripLogsByVanId(Guid vanId)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         
         if (userId == null)
         {
@@ -132,11 +130,11 @@ public class StudentTripLogsController : ApiControllerBase
         }
 
         // Verifica se o usuário tem permissão para ver os registros
-        if (userRole == "Driver")
+        if (userRole.Contains("Driver"))
         {
             var vanTripLogs = await Mediator.Send(new GetStudentTripLogsByVanIdQuery(vanId));
             var firstLog = vanTripLogs.FirstOrDefault();
-            if (firstLog != null && firstLog.Van.AssignedDriverId != userId)
+            if (firstLog != null && firstLog.Van.DriverId != userId)
             {
                 _logger.LogWarning("Driver {UserId} tentou acessar registros de viagem da van {VanId}", 
                     userId, vanId);
@@ -174,13 +172,12 @@ public class StudentTripLogsController : ApiControllerBase
     /// <response code="201">Registro de viagem criado com sucesso</response>
     /// <response code="400">Dados inválidos</response>
     [HttpPost]
-    [Authorize(Policy = Permissions.CreateStudentTripLogs)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<StudentTripLog>> CreateStudentTripLog([FromBody] CreateStudentTripLogCommand command)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         
         if (userId == null)
         {
@@ -189,11 +186,11 @@ public class StudentTripLogsController : ApiControllerBase
         }
 
         // Verifica se o usuário tem permissão para criar o registro
-        if (userRole == "Driver")
+        if (userRole.Contains("Driver"))
         {
             var vanTripLogs = await Mediator.Send(new GetStudentTripLogsByVanIdQuery(command.VanId));
             var firstLog = vanTripLogs.FirstOrDefault();
-            if (firstLog != null && firstLog.Van.AssignedDriverId != userId)
+            if (firstLog != null && firstLog.Van.DriverId != userId)
             {
                 _logger.LogWarning("Driver {UserId} tentou criar registro de viagem para van {VanId}", 
                     userId, command.VanId);
@@ -233,14 +230,13 @@ public class StudentTripLogsController : ApiControllerBase
     /// <response code="400">Dados inválidos</response>
     /// <response code="404">Registro de viagem não encontrado</response>
     [HttpPut("{id}")]
-    [Authorize(Policy = Permissions.EditStudentTripLogs)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateStudentTripLog(Guid id, [FromBody] UpdateStudentTripLogCommand command)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         
         if (userId == null)
         {
@@ -260,7 +256,7 @@ public class StudentTripLogsController : ApiControllerBase
             return NotFound();
         }
 
-        if (userRole == "Driver" && existingLog.Van.AssignedDriverId != userId)
+        if (userRole.Contains("Driver") && existingLog.Van.DriverId != userId)
         {
             _logger.LogWarning("Driver {UserId} tentou atualizar registro de viagem {TripLogId} que não está associado à sua van", 
                 userId, id);
@@ -278,13 +274,12 @@ public class StudentTripLogsController : ApiControllerBase
     /// <response code="204">Registro de viagem removido com sucesso</response>
     /// <response code="404">Registro de viagem não encontrado</response>
     [HttpDelete("{id}")]
-    [Authorize(Policy = Permissions.DeleteStudentTripLogs)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteStudentTripLog(Guid id)
     {
         var userId = _currentUserService.UserId;
-        var userRole = _currentUserService.UserRole;
+        var userRole = _currentUserService.GetRoles();
         
         if (userId == null)
         {
@@ -299,7 +294,7 @@ public class StudentTripLogsController : ApiControllerBase
             return NotFound();
         }
 
-        if (userRole == "Driver" && existingLog.Van.AssignedDriverId != userId)
+        if (userRole.Contains("Driver") && existingLog.Van.DriverId != userId)
         {
             _logger.LogWarning("Driver {UserId} tentou excluir registro de viagem {TripLogId} que não está associado à sua van", 
                 userId, id);

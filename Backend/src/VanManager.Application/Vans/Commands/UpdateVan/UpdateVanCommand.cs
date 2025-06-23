@@ -41,7 +41,7 @@ public class UpdateVanCommandHandler : IRequestHandler<UpdateVanCommand>
             throw new NotFoundException("Van não encontrada");
         }
 
-        if (van.Fleet.OwnerUserId == _currentUserService?.UserId || van.AssignedDriverId == _currentUserService?.UserId)
+        if (van.Fleet.OwnerUserId == _currentUserService?.UserId || van.DriverId == _currentUserService?.UserId)
         {
             _logger.LogWarning("Tentativa de atualização de van {VanId} por usuário não autorizado {UserId}",
                                                request.Id, _currentUserService.UserId);
@@ -50,7 +50,7 @@ public class UpdateVanCommandHandler : IRequestHandler<UpdateVanCommand>
 
         van.PlateNumber = request.PlateNumber;
         van.FleetId = request.FleetId;
-        van.AssignedDriverId = request.AssignedDriverId;
+        van.DriverId = request.AssignedDriverId;
         van.Capacity = request.Capacity;
 
         await _unitOfWork.Repository<Van>().UpdateAsync(van);
